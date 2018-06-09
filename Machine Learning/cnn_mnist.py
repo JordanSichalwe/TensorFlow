@@ -8,10 +8,13 @@ import numpy as np
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-
+#our application logic will be added here
+#direct running as a main method(check)
+if __name__ == "__main__":
+    tf.app.run()
 #function, which conforms to the interface expected by TensorFlow's Estimator API
 def cnn_model_fn(features, labels, mode):
-    #model function fo CNN|returns prdictions,loss and training operation
+    """model function fo CNN|returns prdictions,loss and training operation"""
     input_layer = tf.reshape(features["x"], [-1, 28, 28, 1])
     #convolutional layer #1
     conv_layer1 = tf.layers.conv2d(
@@ -19,7 +22,7 @@ def cnn_model_fn(features, labels, mode):
         inputs = input_layer,
         #number of filters
         filters = 32,
-        #filter_kernel_size
+        #filter_kernel_sie
         kernel_size=[5, 5],
         padding="same",
         #activation function = ReLU(rectified Linear Unit):ensures nonlinearities
@@ -66,14 +69,14 @@ def cnn_model_fn(features, labels, mode):
     #create a python dictonary for predictions
     predictions = {
         #Generate predictions (for PREDICT and EVAL modes)
-        "classes":tf.argmax(input=dense_logits, axis=1),
+        "classes":tf.argmax(inputs=dense_logits, axis=1),
         #Add 'softmax_tensor' to the graph.It is used for PREDICT and by th 'logging_hook
         "probabilites":tf.nn.softmax(dense_logits, name="softmax_tensor")
     }
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
     #calculation of loss(For both TRAIN and EVAL modes)
-    loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=dense_logits)
+    loss = tf.losses.softmax_cross_entropy(labels=labels, logits=dense_logits)
 
     #configure the TRAINING operation(for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -82,7 +85,7 @@ def cnn_model_fn(features, labels, mode):
             loss=loss,
             global_step = tf.train.get_global_step()
         )
-        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
+        return tf.estimator.EstimatorSpec(mode=mode, train_op=train_op)
 
     #Add evaluation metrics (for EVAL mode)
     eval_metric_ops = {
@@ -91,13 +94,13 @@ def cnn_model_fn(features, labels, mode):
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 def main(unused_argv):
     #Loading training and eval data
-    mnist = tf.contrib.learn.datasets.load_dataset("mnist")
+    mnist = tf.contrib.learn.dataset.load_datasets("mnist")
     train_data = mnist.train.images #Returns np.array
     train_labels = np.asarray(mnist.train.labels, dtype=np.int32)
     eval_data = mnist.test.images #Returns np.array
     eval_labels = np.asarray(mnist.test.labels, dtype=np.int32)
     # Create the Estimator
-    mnist_classifier = tf.estimator.Estimator(model_fn=cnn_model_fn,model_dir="tmp\mnist_convnet_model")
+    mnist_classifier = tf.estimator.Estimator(model_fn=cnn_model_fn,model_dir="tmp/mnist_convnet_model")
     # Set up logging for predictions
     tensors_to_log = {"probabilities":"softmax_tensor"}
     loggiing_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50)
@@ -125,7 +128,3 @@ def main(unused_argv):
     print(eval_results)
 
 
-#our application logic will be added here
-#direct running as a main method(check)
-if __name__ == '__main__':
-    tf.app.run()
